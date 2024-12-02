@@ -2,38 +2,42 @@ defmodule Day2 do
   def find_safe do
     list = read_file()
 
-    safely_increasing = Enum.map(list, fn c -> 
-      safe?(c, :increasing) 
-    end)
-    safely_decreasing = Enum.map(list, fn c -> 
-      safe?(c, :decreasing)
-    end)
-    
-    zip = Enum.zip_with(safely_increasing, safely_decreasing, fn x, y -> x || y end)
+    result = Enum.frequencies(Enum.map(list, fn c -> 
+      safe?(c) 
+    end))
 
-    resultfinal = Enum.frequencies(zip)
-    IO.inspect(resultfinal)
+    IO.inspect(result, label: "Solution 1")
   end
 
   def find_safe_with_dampener do
     list = read_file()
 
     bruteforce = Enum.map(list, fn line -> 
-      hate_it_low_iq = for i <- 0..length(list), do: List.delete_at(line, i)
-      Enum.any?(hate_it_low_iq, fn x -> safe?(x, :increasing) end) || Enum.any?(hate_it_low_iq, fn x -> safe?(x, :decreasing) end)
+      all_possible_removes = 
+        Enum.with_index(list)
+        |> Enum.map(fn {_, i} -> List.delete_at(line, i) end)
+
+      Enum.any?(all_possible_removes, fn line -> safe?(line) end) 
     end)
 
-    Enum.frequencies(bruteforce)
+    IO.inspect(Enum.frequencies(bruteforce), label: "Solution")
   end
 
-  def safe?(list, :increasing) do
-    Enum.chunk_every(list, 2, 1, :discard)
-    |> Enum.all?(fn [a, b] -> a < b && abs(a - b) <= 3 end)
-  end
+  def safe?(list) do
+    case list do
+      [a, b | _] -> 
+        direction = if a < b, do: :increasing, else: :decreasing
 
-  def safe?(list, :decreasing) do
-    Enum.chunk_every(list, 2, 1, :discard)
-    |> Enum.all?(fn [a, b] -> a > b && abs(a - b) <= 3 end)
+        Enum.chunk_every(list, 2, 1, :discard)
+        |> Enum.all?(fn [x, y] -> 
+          case direction do
+            :increasing -> x < y && abs(x - y) <= 3
+            :decreasing -> x > y && abs(x - y) <= 3
+          end
+        end)
+
+      _ -> true
+    end
   end
 
   defp read_file do
@@ -46,6 +50,6 @@ defmodule Day2 do
   end
 end
 
-# Day2.find_safe()
+Day2.find_safe()
 Day2.find_safe_with_dampener()
 
